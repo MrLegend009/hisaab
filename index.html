@@ -129,7 +129,7 @@ var store = (function(){
 })();
 
 var log = [], pending = [];
-var type = 'out', cat = '', sending = false;
+var type = 'out', cat = '', sending = false, failCount = 0, hintShown = false;
 
 var $ = function(id){ return document.getElementById(id); };
 var amountEl=$('amount'), noteEl=$('note'), listEl=$('list'), msgEl=$('msg'), toastEl=$('toast');
@@ -279,22 +279,37 @@ function sendNext(){
   if (!navigator.onLine) { syncLabel(); return; }
   var url = scriptUrl();
   if (!url) { syncLabel(); return; }
-  sending = true;
+  sending = true; syncLabel();
   var e = pending[pending.length-1]; // oldest first
-  function done(ok){
-    sending = false;
-    if (ok) {
-      pending.pop(); persistPending();
-      store.setItem('hisaab_lasttime', new Date().toISOString());
-      if (pending.length) sendNext(); else { refresh(); }
-    }
-    syncLabel(); render();
-  }
   fetch(url, { method:'POST', mode:'no-cors',
                headers:{'Content-Type':'text/plain;charset=utf-8'},
                body: JSON.stringify({ type:e.type, amount:e.amount, category:e.category, note:e.note, clientTime:e.clientTime }) })
-    .then(function(){ done(true); })
-    .catch(function(){ done(false); });
+    .then(function(){ setTimeout(function(){ verify(e, 0); }, 1500); })
+    .catch(function(){ sending = false; failCount++; syncLabel(); render(); });
+}
+/* entry is removed from the phone ONLY after we see it inside the Google Sheet */
+function verify(e, attempt){
+  jsonp(scriptUrl(), function(rows){
+    var found = false, i;
+    for (i = 0; i < (rows || []).length; i++) { if (rows[i].id === e.clientTime) { found = true; break; } }
+    if (found) {
+      var k = pending.indexOf(e);
+      if (k >= 0) { pending.splice(k, 1); persistPending(); }
+      sending = false; failCount = 0;
+      store.setItem('hisaab_lasttime', new Date().toISOString());
+      if (pending.length) sendNext(); else refresh();
+      syncLabel(); render();
+    } else if (attempt < 2) {
+      setTimeout(function(){ verify(e, attempt + 1); }, 2500);
+    } else {
+      sending = false; failCount++;
+      syncLabel(); render(); cookieHint();
+    }
+  });
+}
+function cookieHint(){
+  if (hintShown) return; hintShown = true;
+  toast('Entries safe on phone \u2713 \u2014 browser is blocking Google cookies. Allow cookies for script.google.com (or use Chrome)');
 }
 window.addEventListener('online', function(){ $('offban').style.display='none'; sendNext(); if('sync' in (window.ServiceWorkerRegistration||{})){ try{ RegistrationSync(); }catch(e){} } });
 window.addEventListener('offline', function(){ $('offban').style.display='block'; });
@@ -325,28 +340,30 @@ function jsonp(url, cb){
   var s = document.createElement('script');
   window[fn] = function(data){ cb(data); delete window[fn]; s.remove(); };
   s.src = url + '?action=recent&n=300&callback=' + fn;
-  s.onerror = function(){ delete window[fn]; s.remove(); render(); };
+  s.onerror = function(){ delete window[fn]; s.remove(); if (cb) cb(null); };
   document.body.appendChild(s);
-  setTimeout(function(){ if (window[fn]) { delete window[fn]; s.remove(); } }, 9000);
+  setTimeout(function(){ if (window[fn]) { delete window[fn]; s.remove(); if (cb) cb(null); } }, 9000);
 }
 $('refresh').onclick = function(){ sendNext(); refresh(); };
 
 /* ---------- sync status pill ---------- */
 function syncLabel(){
   var el = $('syncState');
-  if (pending.length) {
-    el.textContent = pending.length + ' to sync';
+  if (!scriptUrl()) {
+    el.textContent = 'no URL';
+    el.style.background = 'rgba(255,255,255,.16)';
+  } else if (pending.length) {
+    if (!navigator.onLine) { el.textContent = pending.length + ' on phone ✈️'; }
+    else if (failCount > 0) { el.textContent = '⚠️ retrying…'; }
+    else { el.textContent = sending ? 'syncing…' : pending.length + ' to sync'; }
     el.style.background = 'rgba(245,158,11,.45)';
   } else if (!navigator.onLine) {
     el.textContent = '✈️ offline';
     el.style.background = 'rgba(255,255,255,.16)';
-  } else if (scriptUrl()) {
+  } else {
     var lt = store.getItem('hisaab_lasttime');
     el.textContent = lt ? 'synced ✓' : 'ready ✓';
     el.style.background = 'rgba(22,163,74,.45)';
-  } else {
-    el.textContent = 'no URL';
-    el.style.background = 'rgba(255,255,255,.16)';
   }
 }
 setInterval(syncLabel, 5000);
@@ -432,5 +449,5 @@ window.addEventListener('message', function(ev){
 })();
 </script>
 <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495" integrity="sha512-iIg7k2xntmwu6/uSb5tpc/hySgZc4eoL31yB29W6tJFo2akwjPWcEqnCEdJvGexCL0KEQwVYv5BlowfhVz26hg==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","spa":2}' crossorigin="anonymous"></script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a3ca664959a584d7',t:'MTc4OTY3MjEwNg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a3ca761efbc45543',t:'MTc4OTY3Mjc1NQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
