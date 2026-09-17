@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0f766e">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./icon-192.png">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<title>Hisaab</title>
+<style>
+  :root{--teal:#0f766e;--green:#16a34a;--red:#dc2626;--bg:#f1f5f9;}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  body{margin:0;background:var(--bg);font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;color:#0f172a;}
+  .wrap{max-width:520px;margin:0 auto;padding:12px 14px 90px;}
+  .head{background:linear-gradient(135deg,#0f766e,#134e4a);color:#fff;border-radius:18px;padding:16px 18px;box-shadow:0 6px 18px rgba(15,118,110,.25);}
+  .head h1{margin:0;font-size:20px;display:flex;justify-content:space-between;align-items:center;font-weight:800;}
+  .bal{font-size:32px;font-weight:800;margin:8px 0 4px;}
+  .bal small{font-size:12px;font-weight:400;opacity:.8;display:block;margin-top:2px;}
+  .sub{font-size:12.5px;opacity:.95;display:flex;gap:8px;flex-wrap:wrap;}
+  .pill{background:rgba(255,255,255,.16);border-radius:999px;padding:3px 10px;}
+  .eye{cursor:pointer;font-size:15px;background:rgba(255,255,255,.16);border-radius:999px;padding:2px 10px;font-weight:400;}
+  .syncdot{font-size:11px;background:rgba(255,255,255,.16);border-radius:999px;padding:2px 10px;font-weight:400;}
+  .toggle{display:flex;gap:10px;margin:14px 0 10px;}
+  .toggle button{flex:1;border:2px solid #cbd5e1;background:#fff;border-radius:14px;padding:10px;font-size:16px;font-weight:700;color:#475569;cursor:pointer;}
+  .toggle button small{display:block;font-size:11px;font-weight:500;opacity:.75;}
+  .toggle button.on.out{background:var(--red);border-color:var(--red);color:#fff;}
+  .toggle button.on.in{background:var(--green);border-color:var(--green);color:#fff;}
+  input{width:100%;border:2px solid #cbd5e1;border-radius:14px;padding:12px 14px;font-size:16px;background:#fff;outline:none;font-family:inherit;}
+  input:focus{border-color:var(--teal);}
+  #amount{font-size:30px;font-weight:800;text-align:center;}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0;}
+  .chip{border:1.5px solid #cbd5e1;background:#fff;color:#334155;border-radius:999px;padding:6px 13px;font-size:13px;cursor:pointer;font-family:inherit;}
+  .chip.on{background:var(--teal);border-color:var(--teal);color:#fff;}
+  #save{width:100%;margin-top:12px;background:var(--teal);color:#fff;border:0;border-radius:14px;padding:15px;font-size:18px;font-weight:800;cursor:pointer;font-family:inherit;}
+  #save:active{transform:scale(.98);}
+  .msg{font-size:13px;text-align:center;margin-top:8px;min-height:18px;color:#64748b;}
+  .listh{display:flex;justify-content:space-between;align-items:center;margin:20px 4px 8px;font-size:14px;font-weight:700;color:#334155;}
+  .listh button{border:0;background:none;font-size:16px;cursor:pointer;color:var(--teal);font-weight:700;}
+  .card{background:#fff;border-radius:14px;padding:10px 14px;display:flex;align-items:center;gap:12px;margin-bottom:8px;box-shadow:0 1px 3px rgba(15,23,42,.06);}
+  .ic{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:17px;color:#fff;flex:none;}
+  .ic.in{background:var(--green);} .ic.out{background:var(--red);}
+  .meta{flex:1;min-width:0;}
+  .t1{font-weight:600;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .t2{font-size:12px;color:#64748b;}
+  .amt{font-weight:800;text-align:right;white-space:nowrap;}
+  .amt.in{color:var(--green);} .amt.out{color:var(--red);}
+  .pend{font-size:10px;background:#fef3c7;color:#92400e;border-radius:999px;padding:1px 8px;margin-left:6px;font-weight:700;}
+  .setup{background:#fff;border:2px dashed var(--teal);border-radius:14px;padding:14px;margin:12px 0;font-size:13.5px;line-height:1.5;}
+  .setup input{margin-top:8px;font-size:13px;}
+  .pinov{position:fixed;inset:0;background:rgba(15,23,42,.72);display:none;align-items:center;justify-content:center;z-index:20;}
+  .pinov.show{display:flex;}
+  .pinbox{background:#fff;border-radius:18px;padding:18px;width:270px;text-align:center;}
+  .pinbox h3{margin:0 0 4px;font-size:16px;}
+  .pinbox p{margin:0 0 10px;font-size:12px;color:#64748b;}
+  .pindots{display:flex;gap:12px;justify-content:center;margin:8px 0 6px;}
+  .pdot{width:14px;height:14px;border-radius:50%;border:2px solid #cbd5e1;}
+  .pdot.f{background:#0f766e;border-color:#0f766e;}
+  .perr{color:var(--red);font-size:12px;min-height:16px;margin-bottom:4px;}
+  .pad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+  .pad button{border:1.5px solid #e2e8f0;background:#fff;border-radius:12px;font-size:20px;padding:10px 0;cursor:pointer;font-family:inherit;}
+  .pad button:active{background:#f1f5f9;}
+  .pcancel{margin-top:10px;background:none;border:0;color:#64748b;font-size:13px;cursor:pointer;font-family:inherit;}
+  .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:24px;background:#0f172a;color:#fff;padding:10px 18px;border-radius:999px;font-size:14px;opacity:0;transition:opacity .3s;pointer-events:none;z-index:9;}
+  .toast.show{opacity:.95;}
+  .empty{text-align:center;color:#94a3b8;font-size:14px;padding:20px 0;}
+  .foot{text-align:center;color:#94a3b8;font-size:11.5px;margin-top:18px;line-height:1.6;}
+  code{background:#e2e8f0;border-radius:5px;padding:0 4px;font-size:12px;}
+  .offline-banner{background:#fef3c7;color:#92400e;text-align:center;font-size:12px;padding:5px;font-weight:600;display:none;}
+</style>
+</head>
+<body>
+<div class="offline-banner" id="offban">✈️ No internet — entries are saving on your phone &amp; will sync automatically</div>
+<div class="wrap">
+
+  <div class="head">
+    <h1>📒 Hisaab <span style="display:flex;gap:6px;align-items:center"><span id="syncState" class="syncdot">…</span><span id="eye" class="eye" title="Show / hide amounts">👁</span><span id="gear" style="cursor:pointer;font-size:16px;font-weight:400">⚙</span></span></h1>
+    <div class="bal"><span id="balance">₹0.00</span><small id="balNote">current balance</small></div>
+    <div class="sub">
+      <span class="pill">Today in <b id="tIn">₹0</b></span>
+      <span class="pill">Today out <b id="tOut">₹0</b></span>
+      <span class="pill">This month <b id="tNet">₹0</b></span>
+    </div>
+  </div>
+
+  <div class="setup" id="setupBox">
+    <b>One-time connection to your Google Sheet</b><br>
+    Paste your Apps Script <b>Web app URL</b> (the one that ends with <code>/exec</code>). After that this app works fully offline and syncs by itself.<br>
+    <input id="urlInput" placeholder="https://script.google.com/macros/s/.../exec">
+    <button class="chip" id="urlSave" style="margin-top:8px">Save URL</button>
+    <button class="chip" id="urlClose" style="margin-top:8px;margin-left:6px">Later</button>
+  </div>
+
+  <div class="toggle">
+    <button id="btnOut" class="on out">− Money Out<small>debit · you paid</small></button>
+    <button id="btnIn">+ Money In<small>credit · you received</small></button>
+  </div>
+
+  <input id="amount" inputmode="decimal" type="number" step="any" min="0" placeholder="₹ Amount">
+  <div class="chips" id="chips"></div>
+  <input id="note" placeholder="Note (optional) — e.g. chai + auto fare">
+  <button id="save">💾 &nbsp;Save</button>
+  <div class="msg" id="msg">Saved on phone instantly ⚡ syncs by itself</div>
+
+  <div class="listh"><span>Recent entries</span><button id="refresh">↻ refresh</button></div>
+  <div id="list"><div class="empty">Loading…</div></div>
+
+  <div class="foot" id="foot">Entries save on your phone in 0.01s, then slip into YOUR Google Sheet whenever internet is there.<br>Nothing is ever lost. 100% free forever.</div>
+</div>
+
+<div class="pinov" id="pinov">
+  <div class="pinbox">
+    <h3 id="pinTitle">Enter your PIN</h3>
+    <p id="pinSub">to show your amounts</p>
+    <div class="pindots"><span class="pdot" id="d0"></span><span class="pdot" id="d1"></span><span class="pdot" id="d2"></span><span class="pdot" id="d3"></span></div>
+    <div class="perr" id="perr"></div>
+    <div class="pad" id="pad"></div>
+    <button class="pcancel" id="pcancel">Cancel</button>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ================= Hisaab Offline — local-first money log ================= */
+var store = (function(){
+  try { localStorage.setItem('_t','1'); localStorage.removeItem('_t'); return localStorage; }
+  catch(e){ var m={}; return {getItem:function(k){return m[k]||null;},setItem:function(k,v){m[k]=String(v);},removeItem:function(k){delete m[k];}}; }
+})();
+
+var log = [], pending = [];
+var type = 'out', cat = '', sending = false;
+
+var $ = function(id){ return document.getElementById(id); };
+var amountEl=$('amount'), noteEl=$('note'), listEl=$('list'), msgEl=$('msg'), toastEl=$('toast');
+
+/* ---------- categories ---------- */
+var CATS = ['Food','Tea/Coffee','Travel','Bills','Shopping','Health','Rent','Salary','Other'];
+(function(){
+  var box = $('chips');
+  CATS.forEach(function(c){
+    var b = document.createElement('button');
+    b.className = 'chip'; b.textContent = c;
+    b.onclick = function(){
+      if (cat === c) { cat=''; b.classList.remove('on'); }
+      else { cat = c; [].forEach.call(box.children, function(x){x.classList.remove('on');}); b.classList.add('on'); }
+    };
+    box.appendChild(b);
+  });
+})();
+
+/* ---------- toggle ---------- */
+$('btnOut').onclick = function(){ type='out'; $('btnOut').classList.add('on','out'); $('btnIn').classList.remove('on','in'); };
+$('btnIn').onclick  = function(){ type='in';  $('btnIn').classList.add('on','in');  $('btnOut').classList.remove('on','out'); };
+
+/* ---------- helpers ---------- */
+function money(x){ return '₹' + Number(x||0).toLocaleString('en-IN',{maximumFractionDigits:2}); }
+function p2(n){ return (n<10?'0':'')+n; }
+function nice(t){
+  var d = new Date(String(t||'').replace(' ','T'));
+  if (isNaN(d.getTime())) return t || '';
+  return d.toLocaleDateString(undefined,{day:'numeric',month:'short'}) + ' · ' +
+         d.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'});
+}
+function dayOf(e){   return e.time ? e.time.slice(0,10) : String(e.clientTime).slice(0,10); }
+function monthOf(e){ return e.time ? e.time.slice(0,7)  : String(e.clientTime).slice(0,7);  }
+var now = new Date();
+var TODAY = now.getFullYear()+'-'+p2(now.getMonth()+1)+'-'+p2(now.getDate());
+var MONTH = TODAY.slice(0,7);
+
+var toastTimer = null;
+function toast(m){ toastEl.textContent=m; toastEl.classList.add('show'); clearTimeout(toastTimer); toastTimer=setTimeout(function(){toastEl.classList.remove('show');},2200); }
+
+/* ---------- privacy: PIN + stars ---------- */
+var revealed = false, pinMode = '', pinBuf = '', pinTmp = '', pinTaps = 0, pinTapT = null;
+function setEye(){ $('eye').textContent = revealed ? '🙈' : '👁'; }
+function fmt(x){ return revealed ? money(x) : '₹ •••••'; }
+function hashPin(s){
+  if (window.crypto && crypto.subtle && window.TextEncoder) {
+    return crypto.subtle.digest('SHA-256', new TextEncoder().encode('hisaab·' + s)).then(function(b){
+      return Array.prototype.map.call(new Uint8Array(b), function(x){ return ('0'+x.toString(16)).slice(-2); }).join('');
+    });
+  }
+  return new Promise(function(res){ var h=5381,i; for(i=0;i<s.length;i++){ h=((h<<5)+h+s.charCodeAt(i))>>>0; } res('x'+h.toString(16)); });
+}
+$('eye').onclick = function(){
+  if (revealed) {
+    pinTaps++; clearTimeout(pinTapT);
+    pinTapT = setTimeout(function(){ pinTaps = 0; }, 1200);
+    if (pinTaps >= 5) { pinTaps = 0; if (confirm('Reset your PIN? (Next time you will create a new one)')) { store.removeItem('hisaab_pin'); toast('PIN removed'); } return; }
+    revealed = false; setEye(); render(); return;
+  }
+  pinBuf = ''; pinTmp = '';
+  pinMode = store.getItem('hisaab_pin') ? 'verify' : 'set1';
+  $('pinTitle').textContent = pinMode === 'verify' ? 'Enter your PIN' : 'Create a 4-digit PIN';
+  $('pinSub').textContent = pinMode === 'verify' ? 'to show your amounts' : 'stored only on this phone, hashed';
+  $('perr').textContent = '';
+  drawDots();
+  $('pinov').classList.add('show');
+};
+function drawDots(){ for (var i=0;i<4;i++) $('d'+i).className = 'pdot' + (i < pinBuf.length ? ' f' : ''); }
+function padPress(k){
+  if (k === '⌫') { pinBuf = pinBuf.slice(0,-1); drawDots(); return; }
+  if (pinBuf.length >= 4) return;
+  pinBuf += k; drawDots();
+  if (pinBuf.length === 4) setTimeout(pinSubmit, 120);
+}
+function pinClose(){ $('pinov').classList.remove('show'); pinBuf = ''; }
+function pinSubmit(){
+  if (pinMode === 'verify') {
+    hashPin(pinBuf).then(function(h){
+      if (h === store.getItem('hisaab_pin')) { revealed = true; pinClose(); setEye(); render(); toast('Visible — tap 🙈 to hide again'); }
+      else { $('perr').textContent = 'Wrong PIN — try again'; pinBuf = ''; drawDots(); }
+    });
+  } else if (pinMode === 'set1') {
+    pinTmp = pinBuf; pinBuf = ''; pinMode = 'set2';
+    $('pinTitle').textContent = 'Confirm your PIN'; $('perr').textContent = ''; drawDots();
+  } else {
+    if (pinBuf === pinTmp) {
+      hashPin(pinBuf).then(function(h){ store.setItem('hisaab_pin', h); });
+      revealed = true; pinClose(); setEye(); render(); toast('PIN saved ✓ amounts visible');
+    } else {
+      $('perr').textContent = "PINs didn't match — start again";
+      pinBuf = ''; pinTmp = ''; pinMode = 'set1';
+      $('pinTitle').textContent = 'Create a 4-digit PIN'; drawDots();
+    }
+  }
+}
+(function(){
+  var pad = $('pad'), keys = ['1','2','3','4','5','6','7','8','9','','0','⌫'], i;
+  for (i = 0; i < keys.length; i++) {
+    (function(k){
+      var b = document.createElement('button');
+      b.textContent = (k === '' ? '·' : k);
+      if (k === '') { b.style.visibility = 'hidden'; } else { b.onclick = function(){ padPress(k); }; }
+      pad.appendChild(b);
+    })(keys[i]);
+  }
+  $('pcancel').onclick = pinClose;
+})();
+
+/* ---------- SAVE: instant on phone, sync in background ---------- */
+$('save').onclick = function(){
+  var amount = parseFloat(amountEl.value);
+  if (!(amount > 0)) { toast('Please enter amount'); return; }
+  pending.unshift({ // saved on PHONE in this instant — nothing can lose it now
+    id: Date.now() + '' + Math.floor(Math.random()*10000),
+    type: type, amount: amount, category: cat,
+    note: noteEl.value.trim(), clientTime: new Date().toISOString()
+  });
+  persistPending();
+  amountEl.value=''; noteEl.value=''; cat=''; clearChips();
+  render();
+  sendNext(); // background sync attempt (non-blocking)
+};
+amountEl.addEventListener('keydown', function(ev){ if(ev.key==='Enter') noteEl.focus(); });
+noteEl.addEventListener('keydown', function(ev){ if(ev.key==='Enter') $('save').click(); });
+function clearChips(){ [].forEach.call($('chips').children, function(x){x.classList.remove('on');}); }
+function persistPending(){ try{ store.setItem('hisaab_pending', JSON.stringify(pending)); }catch(e){} }
+
+/* ---------- background sync ---------- */
+function scriptUrl(){ return store.getItem('hisaab_url') || ''; }
+function sendNext(){
+  if (sending || !pending.length) { syncLabel(); return; }
+  if (!navigator.onLine) { syncLabel(); return; }
+  var url = scriptUrl();
+  if (!url) { syncLabel(); return; }
+  sending = true;
+  var e = pending[pending.length-1]; // oldest first
+  function done(ok){
+    sending = false;
+    if (ok) {
+      pending.pop(); persistPending();
+      store.setItem('hisaab_lasttime', new Date().toISOString());
+      if (pending.length) sendNext(); else { refresh(); }
+    }
+    syncLabel(); render();
+  }
+  fetch(url, { method:'POST', mode:'no-cors',
+               headers:{'Content-Type':'text/plain;charset=utf-8'},
+               body: JSON.stringify({ type:e.type, amount:e.amount, category:e.category, note:e.note, clientTime:e.clientTime }) })
+    .then(function(){ done(true); })
+    .catch(function(){ done(false); });
+}
+window.addEventListener('online', function(){ $('offban').style.display='none'; sendNext(); if('sync' in (window.ServiceWorkerRegistration||{})){ try{ RegistrationSync(); }catch(e){} } });
+window.addEventListener('offline', function(){ $('offban').style.display='block'; });
+setInterval(function(){ if (pending.length) sendNext(); }, 20000);
+function RegistrationSync(){ /* background sync request (bonus) */
+  if (navigator.serviceWorker && navigator.serviceWorker.ready) {
+    navigator.serviceWorker.ready.then(function(reg){
+      if (reg.sync) return reg.sync.register('hisaab-sync');
+    }).catch(function(){});
+  }
+}
+if (!navigator.onLine) $('offban').style.display='block';
+
+/* ---------- pull latest rows from the Sheet (when online) ---------- */
+function refresh(){
+  var url = scriptUrl();
+  if (!url || !navigator.onLine) { render(); return; }
+  jsonp(url, function(rows){
+    if (rows && rows.length) {
+      log = rows;
+      try{ store.setItem('hisaab_log', JSON.stringify(log.slice(0,300))); }catch(e){}
+    }
+    render();
+  });
+}
+function jsonp(url, cb){
+  var fn = 'hcb' + Date.now();
+  var s = document.createElement('script');
+  window[fn] = function(data){ cb(data); delete window[fn]; s.remove(); };
+  s.src = url + '?action=recent&n=300&callback=' + fn;
+  s.onerror = function(){ delete window[fn]; s.remove(); render(); };
+  document.body.appendChild(s);
+  setTimeout(function(){ if (window[fn]) { delete window[fn]; s.remove(); } }, 9000);
+}
+$('refresh').onclick = function(){ sendNext(); refresh(); };
+
+/* ---------- sync status pill ---------- */
+function syncLabel(){
+  var el = $('syncState');
+  if (pending.length) {
+    el.textContent = pending.length + ' to sync';
+    el.style.background = 'rgba(245,158,11,.45)';
+  } else if (!navigator.onLine) {
+    el.textContent = '✈️ offline';
+    el.style.background = 'rgba(255,255,255,.16)';
+  } else if (scriptUrl()) {
+    var lt = store.getItem('hisaab_lasttime');
+    el.textContent = lt ? 'synced ✓' : 'ready ✓';
+    el.style.background = 'rgba(22,163,74,.45)';
+  } else {
+    el.textContent = 'no URL';
+    el.style.background = 'rgba(255,255,255,.16)';
+  }
+}
+setInterval(syncLabel, 5000);
+
+/* ---------- render ---------- */
+function render(){
+  var tIn=0, tOut=0, mNet=0;
+  var all = pending.concat(log);
+  all.forEach(function(e){
+    var a = Number(e.amount)||0;
+    if (dayOf(e) === TODAY) { if (e.type==='in'||e.type==='Credit') tIn+=a; else tOut+=a; }
+    if (monthOf(e) === MONTH) mNet += (e.type==='in'||e.type==='Credit') ? a : -a;
+  });
+  $('tIn').textContent = fmt(tIn);
+  $('tOut').textContent = fmt(tOut);
+  $('tNet').textContent = revealed ? ((mNet>=0?'+':'') + money(mNet)) : '₹ •••••';
+
+  var bal = (log && log.length) ? log[0].balance : Number(store.getItem('hisaab_lastbal')) || 0;
+  $('balance').textContent = revealed ? money(bal) : '₹ •••••';
+  $('balNote').textContent = 'current balance' + (pending.length ? '  (+' + pending.length + ' to sync…)' : '');
+  if (log && log.length) try{ store.setItem('hisaab_lastbal', String(log[0].balance)); }catch(e){}
+
+  if (!all.length) { listEl.innerHTML = '<div class="empty">No entries yet — add your first one above 🎉</div>'; return; }
+  var html = '';
+  all.slice(0, 80).forEach(function(e){
+    var isIn = (e.type==='in' || e.type==='Credit');
+    var title = e.note || e.category || (isIn ? 'Money in' : 'Money out');
+    var isPend = e.id && pending.indexOf(e) >= 0;
+    var t2 = nice(e.time || e.clientTime) + (e.category ? ' · ' + e.category : '') +
+             (!isPend && e.balance !== undefined && log.length ? ' · bal ' + (revealed ? money(e.balance) : '•••') : '');
+    html += '<div class="card">' +
+      '<div class="ic ' + (isIn?'in':'out') + '">' + (isIn?'↓':'↑') + '</div>' +
+      '<div class="meta"><div class="t1">' + esc(title) + (isPend ? '<span class="pend">on phone</span>' : '') + '</div>' +
+      '<div class="t2">' + esc(t2) + '</div></div>' +
+      '<div class="amt ' + (isIn?'in':'out') + '">' + (isIn?'+':'−') + (revealed ? money(e.amount) : '•••') + '</div></div>';
+  });
+  listEl.innerHTML = html;
+  syncLabel();
+}
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+/* ---------- URL setup ---------- */
+$('gear').onclick = function(){ $('setupBox').style.display = 'block'; $('urlInput').value = scriptUrl(); };
+$('urlClose').onclick = function(){ $('setupBox').style.display = 'none'; };
+$('urlSave').onclick = function(){
+  var u = $('urlInput').value.trim();
+  if (u.indexOf('https://script.google.com/') !== 0) { toast('That does not look like a Web-App URL'); return; }
+  store.setItem('hisaab_url', u);
+  $('setupBox').style.display = 'none';
+  toast('Connected ✓ syncing will happen by itself');
+  sendNext(); refresh();
+};
+
+/* ---------- service worker: true offline power ---------- */
+if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) {
+  navigator.serviceWorker.register('./sw.js').then(function(reg){
+    // request background sync whenever possible
+    if (reg.sync && pending && pending.length) { try{ reg.sync.register('hisaab-sync'); }catch(e){} }
+    navigator.serviceWorker.addEventListener('message', function(ev){
+      if (ev.data && ev.data.type === 'TRY_SYNC') { sendNext(); refresh(); }
+    });
+  }).catch(function(){ /* file:// or unsupported — app still works */ });
+}
+window.addEventListener('message', function(ev){
+  if (ev.data && ev.data.type === 'TRY_SYNC') { sendNext(); refresh(); }
+});
+
+/* ---------- start ---------- */
+(function init(){
+  try { pending = JSON.parse(store.getItem('hisaab_pending') || '[]'); } catch(e){ pending = []; }
+  try { log = JSON.parse(store.getItem('hisaab_log') || '[]'); } catch(e){ log = []; }
+  if (location.search.indexOf('reset=1') !== -1 && store.getItem('hisaab_pin')) {
+    store.removeItem('hisaab_pin');
+    setTimeout(function(){ toast('PIN erased ✓ tap the eye to create a new one'); }, 600);
+  }
+  if (!scriptUrl()) { $('setupBox').style.display = 'block'; }
+  setEye();
+  render();
+  if (pending.length) sendNext();
+  refresh();
+})();
+</script>
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495" integrity="sha512-iIg7k2xntmwu6/uSb5tpc/hySgZc4eoL31yB29W6tJFo2akwjPWcEqnCEdJvGexCL0KEQwVYv5BlowfhVz26hg==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","spa":2}' crossorigin="anonymous"></script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a3ca3cda7ec9bd1d',t:'MTc4OTY3MDQwOQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
