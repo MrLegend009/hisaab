@@ -259,7 +259,21 @@ function clearChips(){ [].forEach.call($('chips').children, function(x){x.classL
 function persistPending(){ try{ store.setItem('hisaab_pending', JSON.stringify(pending)); }catch(e){} }
 
 /* ---------- background sync ---------- */
-function scriptUrl(){ return store.getItem('hisaab_url') || ''; }
+/* URL is remembered in THREE places so it can never be lost:
+   1) phone storage  2) a 1-year cookie  3) FIXED_URL written in the code */
+var FIXED_URL = 'https://script.google.com/macros/s/AKfycbwIQz2IBFbfu-Cq-EhnDP6Dnw5FRXhJhBP4wS33voiC-exI1BTlkuZefQHDs7-s_Y320Q/exec'; // <-- PASTE YOUR /exec URL BETWEEN THESE QUOTES ' ' (one-time, then re-upload to GitHub)
+function getCookieUrl(){
+  var m = document.cookie.match(/(?:^|;\s*)hisaab_url=([^;]*)/);
+  return m ? decodeURIComponent(m[1]) : '';
+}
+function scriptUrl(){
+  var cands = [store.getItem('hisaab_url'), getCookieUrl(), FIXED_URL], i, u;
+  for (i = 0; i < cands.length; i++) {
+    u = String(cands[i] || '').trim();
+    if (u.indexOf('https://script.google.com/') === 0) return u;
+  }
+  return '';
+}
 function sendNext(){
   if (sending || !pending.length) { syncLabel(); return; }
   if (!navigator.onLine) { syncLabel(); return; }
@@ -381,6 +395,7 @@ $('urlSave').onclick = function(){
   var u = $('urlInput').value.trim();
   if (u.indexOf('https://script.google.com/') !== 0) { toast('That does not look like a Web-App URL'); return; }
   store.setItem('hisaab_url', u);
+  document.cookie = 'hisaab_url=' + encodeURIComponent(u) + ';max-age=31536000;path=/;SameSite=Lax';
   $('setupBox').style.display = 'none';
   toast('Connected ✓ syncing will happen by itself');
   sendNext(); refresh();
@@ -409,12 +424,13 @@ window.addEventListener('message', function(ev){
     setTimeout(function(){ toast('PIN erased ✓ tap the eye to create a new one'); }, 600);
   }
   if (!scriptUrl()) { $('setupBox').style.display = 'block'; }
+  $('urlInput').value = scriptUrl();
   setEye();
   render();
   if (pending.length) sendNext();
   refresh();
 })();
 </script>
-<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495" integrity="sha512-iIg7k2xntmwu6/uSb5tpc/hySgZc4eoL31yB29W6tJFo2akwjPWcEqnCEdJvGexCL0KEQwVYv5BlowfhVz26hg==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","spa":2}' crossorigin="anonymous"></script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a3ca3cda7ec9bd1d',t:'MTc4OTY3MDQwOQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a3ca5118ece3d85a',t:'MTc4OTY3MTIzOA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495" integrity="sha512-iIg7k2xntmwu6/uSb5tpc/hySgZc4eoL31yB29W6tJFo2akwjPWcEqnCEdJvGexCL0KEQwVYv5BlowfhVz26hg==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","spa":2}' crossorigin="anonymous"></script>
+</body>
 </html>
