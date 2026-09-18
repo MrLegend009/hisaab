@@ -205,14 +205,16 @@ var store = (function(){
 })();
 
 var SYNC_KEY = 'TeT_qaXc30S5xuIHaxGHtk5s'; // matches API_KEY in Code.gs (change both together)
-var FIXED_URL = 'https://script.google.com/macros/s/AKfycbzoQv3V_fKIBMaoewHh7u8lUNINPuXp0-DaX44fZQOwkoyr9bVjbYDP4XFSp7v1mUTh-Q/exec'; // <-- PASTE YOUR SYNC (ANONYMOUS) DEPLOYMENT URL BETWEEN THESE QUOTES
+var FIXED_URL = 'https://script.google.com/macros/s/AKfycbzoQv3V_fKIBMaoewHh7u8lUNINPuXp0-DaX44fZQOwkoyr9bVjbYDP4XFSp7v1mUTh-Q/exec'; // your verified sync door
 
 function getCookieUrl(){
   var m = document.cookie.match(/(?:^|;\s*)hisaab_url=([^;]*)/);
   return m ? decodeURIComponent(m[1]) : '';
 }
 function scriptUrl(){
-  var cands = [store.getItem('hisaab_url'), getCookieUrl(), FIXED_URL], i, u;
+  /* FIXED_URL (baked at upload) wins over old remembered values,
+     so a stale link can never hijack syncing again */
+  var cands = [FIXED_URL, store.getItem('hisaab_url'), getCookieUrl()], i, u;
   for (i=0;i<cands.length;i++){
     u = String(cands[i]||'').trim();
     if (u.indexOf('https://script.google.com/') === 0) return u;
@@ -529,5 +531,5 @@ window.addEventListener('message', function(ev){
   kickReplayer();
 })();
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a3cfaf815a8611ea',t:'MTc4OTcyNzUzNA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a3cfc5276a1ab6fe',t:'MTc4OTcyODQyMQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
