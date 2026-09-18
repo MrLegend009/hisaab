@@ -1,10 +1,5 @@
-/* Hisaab service worker — makes the app open with ZERO internet.
-   Strategy:
-   - App shell (page, manifest, icons): cache-first  → instant open offline
-   - Google Script API calls: NOT intercepted (the app page handles queueing itself)
-   - On 'sync' event (fires when internet returns): wake the app page to push queued entries
-*/
-var CACHE = 'hisaab-v1';
+/* Hisaab v2 service worker — offline shell + sync nudge */
+var CACHE = 'hisaab-v3-shell';
 var SHELL = [
   './',
   './index.html',
@@ -28,26 +23,21 @@ self.addEventListener('activate', function (e) {
 self.addEventListener('fetch', function (e) {
   var url = new URL(e.request.url);
 
-  // Never touch API traffic to Google Scripts — page manages it.
+  // never touch traffic to Google — the app manages its own verified sync
   if (url.hostname.indexOf('script.google.com') !== -1) return;
-
   if (e.request.method !== 'GET') return;
 
-  // App page navigations: cache-first, fall back to cached page offline
   if (e.request.mode === 'navigate') {
     e.respondWith(
       fetch(e.request).then(function (res) {
         var copy = res.clone();
         caches.open(CACHE).then(function (c) { c.put('./index.html', copy); });
         return res;
-      }).catch(function () {
-        return caches.match('./index.html');
-      })
+      }).catch(function () { return caches.match('./index.html'); })
     );
     return;
   }
 
-  // Other same-origin assets: cache-first, then network (and cache it)
   e.respondWith(
     caches.match(e.request).then(function (hit) {
       return hit || fetch(e.request).then(function (res) {
@@ -61,18 +51,11 @@ self.addEventListener('fetch', function (e) {
   );
 });
 
-// Ask any open app page to push its queue to the Google Sheet
-function nudgeClients() {
+function nudge() {
   self.clients.matchAll({ includeUncontrolled: true, type: 'window' }).then(function (cs) {
     cs.forEach(function (c) { c.postMessage({ type: 'TRY_SYNC' }); });
   });
 }
-self.addEventListener('sync', function (e) {
-  if (e.tag === 'hisaab-sync') e.waitUntil(nudgeClients());
-});
-self.addEventListener('periodicsync', function (e) {
-  if (e.tag === 'hisaab-sync') e.waitUntil(nudgeClients());
-});
-self.addEventListener('message', function (e) {
-  if (e.data === 'SYNC_NOW') nudgeClients();
-});
+self.addEventListener('sync', function (e) { if (e.tag === 'hisaab-sync') e.waitUntil(nudge()); });
+self.addEventListener('periodicsync', function (e) { if (e.tag === 'hisaab-sync') e.waitUntil(nudge()); });
+self.addEventListener('message', function (e) { if (e.data === 'SYNC_NOW') nudge(); });
