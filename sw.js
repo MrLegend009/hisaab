@@ -1,5 +1,5 @@
 /* Hisaab v2 service worker — offline shell + sync nudge */
-var CACHE = 'hisaab-v4-shell';
+var CACHE = 'hisaab-v5-shell';
 var SHELL = [
   './',
   './index.html',
